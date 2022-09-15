@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+"""
+author: Jiadi
+Date: 2022.9.8
+BNP_HMM_CUSUM.py for BNPHMM
+"""
+import sys
+sys.path.append('/home/vip/bjd/code')
+from hashlib import new
+import math
+from mimetypes import init
+import numpy as np
+from matplotlib import pyplot as plt
+import seaborn as sns
+sns.set_theme(style="darkgrid")
+from synth import workmode_cat, center_compare, trans_compare, hinton, dataset_eva
+from scipy.stats import entropy as entropy
+from viterbi import viterbiLog
+from ChangeFinder import CUSUM_BNP_HMM, ChangeFinder, FSS, CUsum
+from HMM_BNP_func import DP_GMM
+import time
+plt.rc('font',family='Times New Roman')
+
+def UFSS(X, Z, batchsize = 20, FSS_threshold = 5):
+
+    start = time.time()
+    bkps=[]
+    CF = FSS(X, bkps=[], mean=[], var=[], para_known=False, fixed_threshold=FSS_threshold, fixed_size=batchsize)#高斯抖动为800
+    indicater = CF.fss_detection()
+
+    for index in range(len(indicater)):
+        if indicater[index]>5:
+            bkps.append(index)
+    bkps.append(X.shape[0])
+    print("time consuming:",time.time()-start)
+    return bkps
+
+if __name__ == '__main__':
+    
+    bkps_dic = []
+    bkps_truth_dic = []
+    for i in range(100):
+        #读取数据+数据整形
+        data_path = "dataset/D7/"
+        D1 = np.load(data_path+str(i+1)+'.npy',allow_pickle = True)
+        X = np.array([D1[:,0]]).T
+        Z = np.array([D1[:,1]]).T
+        
+        bkps_truth = [150,300,450]
+        bkps_truth.append(X.shape[0])
+        bkps_truth_dic.append(bkps_truth)
+        #推理
+        bkps = UFSS(X, Z, batchsize = 20, FSS_threshold=80000)
+        print(bkps)
+        bkps_dic.append(bkps)
+
+
+    np.save(data_path + 'result/bkps_dic_UFSS.npy',bkps_dic)
+    np.save(data_path + 'result/bkps_truth_dic_UFSS.npy',bkps_truth_dic)    
+        #保存
+    dataset_eva(bkps_dic, bkps_truth_dic)

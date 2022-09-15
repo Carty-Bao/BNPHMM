@@ -1,0 +1,11 @@
+﻿type,algorithms,deltak
+slide PRI,BNP-HMM,-3.6
+stagger PRI,BNP-HMM,-2.2
+agile PRI,BNP-HMM,-3.2
+D&S PRI,BNP-HMM,0.1
+jitter PRI,BNP-HMM,0.1
+slide PRI,agile BNP-HMM,0.2
+stagger PRI,agile BNP-HMM,0.1
+agile PRI,agile BNP-HMM,1
+D&S PRI,agile BNP-HMM,0.4
+jitter PRI,agile BNP-HMM,1

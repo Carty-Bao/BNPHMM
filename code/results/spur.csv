@@ -1,0 +1,25 @@
+﻿type,algorithms,spur pulses,deltak
+slide PRI,BNP-HMM,0,0
+D&S PRI,BNP-HMM,0,0
+slide PRI,agile BNP-HMM,0,0
+D&S PRI,agile BNP-HMM,0,0
+slide PRI,BNP-HMM,0.05,0.2
+D&S PRI,BNP-HMM,0.05,0
+slide PRI,agile BNP-HMM,0.05,0.1
+D&S PRI,agile BNP-HMM,0.05,2
+slide PRI,BNP-HMM,0.1,0.2
+D&S PRI,BNP-HMM,0.1,0
+slide PRI,agile BNP-HMM,0.1,0
+D&S PRI,agile BNP-HMM,0.1,3
+slide PRI,BNP-HMM,0.2,1.2
+D&S PRI,BNP-HMM,0.2,0.6
+slide PRI,agile BNP-HMM,0.2,0.6
+D&S PRI,agile BNP-HMM,0.2,3
+slide PRI,BNP-HMM,0.3,1.6
+D&S PRI,BNP-HMM,0.3,1
+slide PRI,agile BNP-HMM,0.3,0.8
+D&S PRI,agile BNP-HMM,0.3,3.5
+slide PRI,BNP-HMM,0.4,2.2
+D&S PRI,BNP-HMM,0.4,1.5
+slide PRI,agile BNP-HMM,0.4,1.6
+D&S PRI,agile BNP-HMM,0.4,4
