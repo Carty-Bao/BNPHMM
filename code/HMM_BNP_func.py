@@ -9,7 +9,6 @@ from cmath import exp
 from email.errors import FirstHeaderLineIsContinuationDefect
 from operator import delitem
 import numpy as np
-# from main import L
 from synth import Non_ideal_HMM, hinton
 from scipy.special import digamma, loggamma #gammaln
 from hamming import hamming_distance
@@ -24,11 +23,11 @@ def inv0(X):#矩阵求逆
 
 class DP_GMM(object):
 
-    def __init__(self,X,K,Z=None,agile=False):
+    def __init__(self,X,K,Z=None,agile=True, kappa=0):
         self.X = X  #数据(N,XDim)
         self.N, self.XDim = self.X.shape
         self._K = K #截断长度
-        self.kappa = 100#跳转系数
+        self.kappa = kappa#跳转系数
         self._hyperparams = {'beta0':(1e-40), #均值的偏差，越小，GMM范围越大
                         'v0':self.XDim+4, #wishart分布的自由度
                         'W0':(1e-2)*np.eye(self.XDim), #协方差的先验，越大，方差越小
@@ -127,10 +126,10 @@ class DP_GMM(object):
             itr+=1
         
             # #calc hanmming distance
-            # z_hat = self.exp_z.argmax(axis=1)
-            # if self.ztrue is not None:
-            #     HD = hamming_distance(self.ztrue,z_hat)
-            #     # self.hamming.append(HD)
+            z_hat = self.exp_z.argmax(axis=1)
+            if self.ztrue is not None:
+                HD = hamming_distance(self.ztrue,z_hat)
+                self.hamming.append(HD)
             
             #calc state number
             del_index = np.where(~self.exp_z.any(axis=0))[0]
@@ -184,11 +183,11 @@ class DP_GMM(object):
             
             itr+=1
 
-            #calc hamming distance
-            # z_hat = self.exp_z.argmax(axis=1)
-            # if self.ztrue is not None:
-            #     HD = hamming_distance(self.ztrue, z_hat)
-            #     self.hamming.append(HD)
+            # calc hamming distance
+            z_hat = self.exp_z.argmax(axis=1)
+            if self.ztrue is not None:
+                HD = hamming_distance(self.ztrue, z_hat)
+                self.hamming.append(HD)
 
             # if (itr>=250 or diff<=self.thre) and (itr>=3):
             #     print ('HMM INFERENCE done')
@@ -291,7 +290,7 @@ class DP_GMM(object):
             for j in range(K):
                 if i == j and self.agile:
                     self.tau_a0[i,j] = self.alpha_a + self.exp_s[:,i,j+1:].sum()# BJD Equ 4
-                    self.tau_a1[i,j] = 0.
+                    self.tau_a1[i,j] = 1. + self.exp_s[:,i,j].sum() - self.kappa * (1. + self.exp_s[:,i,j].sum())   # BJD Equ 3
                 else:
                     self.tau_a0[i,j] = self.alpha_a + self.exp_s[:,i,j+1:].sum() # BJD Equ 4
                     self.tau_a1[i,j] = 1. + self.exp_s[:,i,j].sum()  # BJD Equ 3
