@@ -30,10 +30,10 @@ class DP_GMM(object):
         self.kappa = kappa#跳转系数
         self._hyperparams = {'beta0':(1e-40), #均值的偏差，越小，GMM范围越大
                         'v0':self.XDim+4, #wishart分布的自由度
-                        'W0':(1e-2)*np.eye(self.XDim), #协方差的先验，越大，方差越小
-                        'alpha':25., #DP-GMM的DP参数
+                        'W0':(1e-1)*np.eye(self.XDim), #协方差的先验，越大，方差越小
+                        'alpha':1., #DP-GMM的DP参数
                         'alpha_pi':1.,#初始状态状态的DP参数
-                        'alpha_a':25.,#状态转移矩阵的DP参数
+                        'alpha_a':20.,#状态转移矩阵的DP参数
                         #DP参数越大，分布越集中
                     }
         self.thre = 1e-4
@@ -128,6 +128,17 @@ class DP_GMM(object):
             # #calc hanmming distance
             z_hat = self.exp_z.argmax(axis=1)
             if self.ztrue is not None:
+                # del_index = []
+                # z_hat.reshape(-1,1)
+                # for i, z in enumerate(self.ztrue):
+                #     if z < 0:
+                #         del_index.append(i)
+                # for index in del_index.reverse():
+                #     del self.ztrue[index]
+                #     del z_hat[index]
+                for i, z in enumerate(self.ztrue):
+                    if z < 0:
+                        z_hat[i] = z
                 HD = hamming_distance(self.ztrue,z_hat)
                 self.hamming.append(HD)
             
@@ -197,7 +208,7 @@ class DP_GMM(object):
     
     def fit(self):
         self.init_q_param()
-        self.mixture_fit()
+        # self.mixture_fit()
         self.HMM_fit()
 
     def update(self,minibatch=None,label=None, share=True, add_one = None):

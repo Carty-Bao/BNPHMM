@@ -66,9 +66,14 @@ def gen_alpha(type = 'jitter', K = 3):
         assert K==1, "K must be 1"
         alpha = np.eye(K)
     if type in ['stagger', 'agile', 'dwell']:
-        alpha = np.eye(K)
-        while(1 in np.diag(alpha)):
-            np.random.shuffle(alpha)
+        # alpha = np.eye(K)
+        # while(1 in np.diag(alpha)):
+        #     np.random.shuffle(alpha)
+        alpha = np.array([[0., 0., 0., 1., 0.],
+                        [0., 0., 0., 0., 1.],
+                        [1., 0., 0., 0., 0.],
+                        [0., 1., 0., 0., 0.],
+                        [0., 0., 1., 0., 0.]])
     if type == 'slide':
         alpha = np.eye(K)
         alpha = np.vstack((alpha[1:],alpha[0]))
@@ -259,11 +264,12 @@ def TOA2PRI(TOA_signal,init_TOA):
 
     return TOA_signal.tolist()
 
-def add_spur_PRI(PRI_signal, spur_ratio, bkps_truth):
+def add_spur_PRI(PRI_signal, spur_ratio, bkps_truth, Z=None):
     '''
     添加虚假脉冲
     比例为pulse_ratio
     '''
+
     TOA_signal, init_TOA = PRI2TOA(PRI_signal)
     bkps_value = []
     for bkp in bkps_truth:
@@ -272,16 +278,35 @@ def add_spur_PRI(PRI_signal, spur_ratio, bkps_truth):
     spur_num = np.floor(spur_ratio * len(TOA_signal))
     #按照均匀分布插入虚假脉冲
     spur_toa_seq = list(np.random.uniform(low=0, high=max(TOA_signal), size=int(spur_num)))
-    TOA_signal = list(TOA_signal)
+
     TOA_signal.extend(spur_toa_seq)
+    index_order = np.argsort(np.array(TOA_signal), axis=0)
     TOA_signal.sort()
+    if Z is not None:
+        flag = False#是否虚假脉冲
+        spur = -2 * np.ones((int(spur_num), 1)) 
+        Z = np.concatenate((Z,spur))
+       
+        Z_spur = []
+        for order in index_order:
+            if flag == True:
+                Z_spur.append(-2)
+                flag = False
+                continue
+            if Z[order] == -2:
+                Z_spur.append(-2)
+                flag=True
+            else:
+                Z_spur.append(Z[order])    
+
     bkps_index = []
     for value in bkps_value:
         bkps_index.append(TOA_signal.index(value))
     PRI_spur = TOA2PRI(TOA_signal, init_TOA)
-    return PRI_spur, bkps_index
 
-def add_miss_PRI(PRI_signal, miss_ratio, bkps_truth):
+    return PRI_spur, bkps_index, np.array(Z_spur).reshape(-1,1)
+
+def add_miss_PRI(PRI_signal, miss_ratio, bkps_truth, Z=None):
     '''
     缺失脉冲
     miss_ratio 为 缺失脉冲的比例
@@ -308,8 +333,23 @@ def add_miss_PRI(PRI_signal, miss_ratio, bkps_truth):
 
     #从TOA中丢弃
     TOA_signal_miss = [pulse for index, pulse in enumerate(TOA_signal) if index not in miss_pulse]
-    PRI_miss = TOA2PRI(TOA_signal_miss, init_TOA)
-    return PRI_miss, bkps_truth
+    if Z is not None:
+        Z_miss = []
+        flag = False #是否缺失，影响后面的脉冲
+        for index, label in enumerate(Z):
+            if index not in miss_pulse:
+                if flag:
+                    Z_miss.append(-1)
+                    flag=False
+                else: 
+                    Z_miss.append(label)
+            else:
+                flag=True
+        PRI_miss = TOA2PRI(TOA_signal_miss, init_TOA)
+        return PRI_miss, bkps_truth, np.array(Z_miss).reshape(-1,1)
+    else:
+        PRI_miss = TOA2PRI(TOA_signal_miss, init_TOA)
+        return PRI_miss, bkps_truth
 
 def calculate_FA_MD_ADD(bkps, bkps_truth):
     FA, DD = [], []
@@ -355,8 +395,8 @@ def dataset_eva(bkps_dic, bkps_truth_dic):
     DD_all = 0
     for bkps, bkps_truth in zip(bkps_dic, bkps_truth_dic):
         # FA, MD, ADD = calculate_FA_MD_ADD(bkps, bkps_truth)
+        bkps = list(bkps)
         FA, MD, DD = calculate_FA_MD_ADD(bkps, bkps_truth)
-
         #计算虚警前平均时长
         for alarm in FA:
             FA_index = bkps.index(alarm)
@@ -373,14 +413,23 @@ def dataset_eva(bkps_dic, bkps_truth_dic):
         bkp_truth_num += len(bkps_truth)
         # print(bkps)
     # print(bkp_num)
-    FAR = FA_num / bkp_num
-    MDR = MD_num / bkp_truth_num
-    ADD = DD_all / DD_num
+    try:
+        FAR = FA_num / bkp_num
+    except:
+        FAR = 0
+    try:
+        MDR = MD_num / bkp_truth_num
+    except:
+        MDR = 1
+    try:
+        ADD = DD_all / DD_num
+    except:
+        ADD = 2
     F1 = DD_num / (DD_num+0.5*(FA_num + MD_num))
     try:
         MT2FA = T2FA / FA_num
     except:
-        MT2FA = 'infinity'
+        MT2FA = 300
     print("FAR:", FAR)
     print("MDR:", MDR)
     print("ADD:", ADD)

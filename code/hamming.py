@@ -187,6 +187,7 @@ def alignEstimatedStateSeqToTruth(zHat, zTrue, useInfo=None, returnInfo=False):
         return zHatA
 
 def hamming_distance(z_true,z_hat):
+                
     z_hat_align = alignEstimatedStateSeqToTruth(z_hat, z_true)
     hdistance = calcHammingDistance(z_true, z_hat_align)
     normdist = float(hdistance) / float(z_hat_align.size)
